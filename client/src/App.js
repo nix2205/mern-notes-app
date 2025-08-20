@@ -5,19 +5,28 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
+  // ✅ Use the env var
+  const API = process.env.REACT_APP_BACKEND_URL;
+
   // Fetch messages
   useEffect(() => {
-    axios.get("http://localhost:5000/api/messages").then(res => {
+    axios.get(`${API}/api/messages`).then(res => {
       setMessages(res.data);
+    }).catch(err => {
+      console.error("Error fetching messages:", err);
     });
-  }, []);
+  }, [API]);
 
   // Add message
   const addMessage = async () => {
     if (!input.trim()) return;
-    const res = await axios.post("http://localhost:5000/api/messages", { text: input });
-    setMessages([...messages, res.data]);
-    setInput("");
+    try {
+      const res = await axios.post(`${API}/api/messages`, { text: input });
+      setMessages([...messages, res.data]);
+      setInput("");
+    } catch (err) {
+      console.error("Error posting message:", err);
+    }
   };
 
   return (
