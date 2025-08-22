@@ -25,24 +25,33 @@ function App() {
 
   // ✅ Handle city fetch & save
   const handleGetCity = async () => {
-    setLoading(true);
-    try {
-      const coords = await getUserLocation();
-      const foundCity = await getCityFromCoords(coords);
-      setCurrentCity(foundCity);
+  setLoading(true);
+  try {
+    const coords = await getUserLocation();
+    const { fullAddress, city } = await getCityFromCoords(coords);
 
-      // ✅ Save city in DB
-      await axios.post(`${API}/api/cities`, { city: foundCity });
+    console.log("📍 Full Address:", fullAddress); // show in UI/log
+    console.log("🏙️ City:", city); // clean city name
+
+    if (city && city !== "Unknown") {
+      setCurrentCity(city);
+
+      // ✅ Save only city to DB
+      await axios.post(`${API}/api/cities`, { city });
 
       // ✅ Refresh list
       fetchCities();
-    } catch (err) {
-      console.error("Failed to get city:", err);
-      setCurrentCity("Unknown");
-    } finally {
-      setLoading(false);
+    } else {
+      setCurrentCity(null);
     }
-  };
+  } catch (err) {
+    console.error("Failed to get city:", err);
+    setCurrentCity(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial" }}>

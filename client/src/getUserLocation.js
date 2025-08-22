@@ -1,54 +1,3 @@
-// // src/getUserLocation.js
-
-// export const getUserLocation = () => {
-//   return new Promise((resolve) => {
-//     if (!navigator.geolocation) {
-//       console.warn("Geolocation not supported, using fallback location.");
-//       resolve({ lat: 17.3851, lon: 78.4866 }); // Hyderabad fallback
-//     } else {
-//       navigator.geolocation.getCurrentPosition(
-//         (pos) => {
-//           resolve({
-//             lat: pos.coords.latitude,
-//             lon: pos.coords.longitude,
-//           });
-//         },
-//         (err) => {
-//           console.warn("Failed to get GPS location. Using fallback location.");
-//           resolve({ lat: 17.3851, lon: 78.4866 });
-//         },
-//         { timeout: 10000 }
-//       );
-//     }
-//   });
-// };
-
-// export const getCityFromCoords = async ({ lat, lon }) => {
-//   try {
-//     const response = await fetch(
-//       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
-//     );
-//     const data = await response.json();
-
-//     let city =
-//       data?.address?.city ||
-//       data?.address?.town ||
-//       data?.address?.village ||
-//       data?.address?.hamlet ||
-//       "Unknown";
-
-//     city = city.replace(/municipal corporation|corporation|district|city/i, "").trim();
-
-//     return city;
-//   } catch (err) {
-//     console.error("Failed to fetch city from coordinates:", err);
-//     return "Unknown";
-//   }
-// };
-
-
-// src/getUserLocation.js
-
 // Fallback: IP-based geolocation
 const getLocationByIP = async () => {
   try {
@@ -95,33 +44,28 @@ export const getUserLocation = () => {
 };
 
 export const getCityFromCoords = async ({ lat, lon }) => {
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`
-    );
-    const data = await response.json();
+  const key = process.env.REACT_APP_OPENCAGE_API_KEY;
 
-    let city =
-      data?.address?.suburb ||
-      data?.address?.neighbourhood ||
-      data?.address?.quarter ||
-      data?.address?.village ||
-      data?.address?.town ||
-      data?.address?.city_district ||
-      data?.address?.state_district ||
-      data?.address?.city ||
-      data?.address?.county;
+  const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${key}&language=en&no_annotations=1`;
+  
+  const res = await fetch(url);
+  const json = await res.json();
+  console.log("OpenCage response:", json);
 
-    if (!city) throw new Error("City not found in reverse geocode");
+  if (!json.results?.length) return { city: null, fullAddress: null };
 
-    city = city.replace(
-      /municipal corporation|corporation|district|city|mandal|block/gi,
-      ""
-    ).trim();
+  const components = json.results[0].components;
+  const fullAddress = json.results[0].formatted;
 
-    return city;
-  } catch (err) {
-    console.error("Failed to fetch city from coordinates:", err);
-    throw new Error("Could not fetch city");
-  }
+  const city = components.city ||
+               components.town ||
+               components.village ||
+               components.county ||
+               null;
+
+  return { city, fullAddress };
 };
+
+
+
+
